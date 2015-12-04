@@ -3,7 +3,7 @@ Parse.initialize("M0a7TBns2wo7HMdoULhac86LMnpjPothTzst4a1T", "cV4npfDqaSpeTLSwwy
 
 var fields = {
   // counts how many times a user visited the page
-  visited: "visited"
+  visited: Parse.User.current().id
 };
 console.log("hi track count +1");
 Parse.Analytics.track('editPage', fields);
@@ -209,6 +209,12 @@ function saveIt() {
       perWeek[i] = false;
     }
     console.log(perWeek[i]);
+
+  var update = {
+    updated: Parse.User.current().id
+  }
+  Parse.Analytics.track('editPageError', update);
+
   }
 
   var daily = document.getElementsByName("day");
@@ -246,6 +252,20 @@ function saveIt() {
   console.log(title + " p: " + perWeek + " D: " + perDay + " t " + time);;
 
   //var selectedFile = document.getElementById("upload").files[0];
+  var fields = {};
+  if (title === "" || title === null)
+    fields.missingTitle = String(Parse.User.current().id);
+  if (!checkedWeek)
+    fields.missingWeeklyFreq = String(Parse.User.current().id);
+  if (!checkedDay)
+    fields.missingDayFreq = String(Parse.User.current().id);
+  // if (parseImg == undefined)
+  //   fields.missingImg = String(Parse.User.current().id);
+  //send results to parse Analytics
+  if (isNotEmpty(fields)) {
+    Parse.Analytics.track('editPageError', fields);
+  }
+
   if (title == "" || title == null) {
     alert("please put a habit name");
   } else if (!checkedWeek) {
@@ -257,6 +277,16 @@ function saveIt() {
     addHabit(getHabitId(), title, perWeek, Number(perDay), time);
   }
 }
+
+function isNotEmpty(obj) {
+  for (var prop in obj) {
+    if (obj.hasOwnProperty(prop))
+      return true;
+  }
+
+  return false;
+}
+
 function isPerWeekFreqChanged(oldFreqPerWeek, newFreqPerWeek) {
   var arrayLength = oldFreqPerWeek.length;
   for (var i = 0; i < arrayLength; i++) {
@@ -265,6 +295,7 @@ function isPerWeekFreqChanged(oldFreqPerWeek, newFreqPerWeek) {
   }
   return false;
 }
+
 function addHabit(habitId, title, perWeek, perDay, notificationTime) {
   var TestObject = Parse.Object.extend("Habits");
   var testObject = new TestObject();
@@ -328,7 +359,7 @@ function setImageForIcon() {
 }
 
 function createImage() {
-  if (imageForIcon == undefined)
+ /* if (imageForIcon == undefined)
     return undefined;
 
   var fileUploadControl = $("#upload")[0];
@@ -339,7 +370,19 @@ function createImage() {
   var name = "photo.jpg";
   var parseFile = new Parse.File(name, file);
 
-  return parseFile;
+  return parseFile; */
+  if (imageForIcon == undefined)
+    return undefined;
+    var fileUploadControl = $("#upload")[0];
+  console.log("ddeee" + fileUploadControl);
+  //if (fileUploadControl.files.length > 0) {
+    var file = imageForIcon;
+    console.log("icon" + file);
+    if (notAnewFile) return file;
+    var name = "photo.jpg";
+    var parseFile = new Parse.File(name, file);
+
+    return parseFile;
 }
 
 var imageForIcon; //updated in teh listner and used to craeteImage
@@ -364,21 +407,69 @@ $(function() {
   });
 });
 
+var images = [];
+(window.onpopstate = function() {
+  getDefaultImages();
+})();
+
+function getDefaultImages() {
+
+
+  var Images = Parse.Object.extend("Icons");
+  var query = new Parse.Query(Images);
+
+  query.find({
+    success: function(results) {
+      $(".success").show();
+      var resultLength = results.length;
+      for (var i = 0; i < resultLength; i++) {
+        var object = results[i];
+        images[i] = results[i];
+        console.log("hi" + object.get("icon"));
+      }
+
+    },
+    error: function(model, error) {
+      $(".error").show();
+    }
+  });
+}
+var notAnewFile = false;
 function selectImage(name) {
   //Clear all the other effects
   var arr = document.getElementsByClassName("icon");
   for (var i = 0; i < arr.length; i++) {
     arr[i].style.border = "3px inset rgba(0,0,0,0)";
   }
+  console.log(arr);
   //document.getElementById('icon2').style.border = "3px inset rgba(0,0,0,0)";
   //document.getElementById('icon3').style.border = "3px inset rgba(0,0,0,0)";
   var image = document.getElementById(name);
-
+/*
   image.style.border = "3px inset #999999";
   imageForIcon = undefined;
 
   if (name === "newicon") imageForIcon = imageRecovery;
   else imageForIcon = undefined;
+*/
+  image.style.border = "3px inset #999999";
+  switch (name) {
+    case "icon1":
+    imageForIcon = images[0].get("icon");
+    notAnewFile = true;
+    break;
+    case "icon2":
+    imageForIcon = images[1].get("icon");
+    notAnewFile = true;
+    break;
+    case "newicon":
+    imageForIcon = imageRecovery;
+    notAnewFile = false;
+    break;
+
+    default:
+    imageForIcon = undefined;
+  }
 }
 function insertImage(imageSrc) {
   var iconTag = document.getElementById("testme");

@@ -3,8 +3,9 @@ Parse.initialize("M0a7TBns2wo7HMdoULhac86LMnpjPothTzst4a1T", "cV4npfDqaSpeTLSwwy
 
 var fields = {
   // counts how many times a user visited the page
-  visited: "visited"
+  visited: Parse.User.current().id
 };
+console.log("hi track count +1");
 Parse.Analytics.track('habitListPage', fields);
 
 function habit(habitId, habitName, iconSource, freqCount, freqDay, freqSet, freqSetMet, freqBest, completedDayDate, updatedFreqDate, notificationTime, freqPerWeek, parseObject) {
@@ -335,6 +336,9 @@ function makeNotifications(habitsArray) {
   for(i = 0; i < length; i++) {
     var days = habitsArray[i].freqPerWeek;
     var time = habitsArray[i].notificationTime;
+    if(time == null) {
+      continue;
+    }
     var hourMinute = time.split(":");
     var hour = Number(hourMinute[0]);
     var minute = Number(hourMinute[1]);
